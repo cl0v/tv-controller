@@ -3,14 +3,18 @@ const robot = require('robotjs');
 
 const server = new WebSocket.Server({ port: 8080 });
 
+let screenSize = robot.getScreenSize();
+
+
 
 let mousePos = robot.getMousePos();
-robot.setMouseDelay(0.5);
+robot.setMouseDelay(1);
 let defaultSensitivity = 10;
 
 
 let changeSensitivity = (value) => {
   robot.setMouseDelay(value);
+  defaultSensitivity *= value;
   console.log('Mouse delay set to: ' + value);
 };
 
@@ -19,9 +23,11 @@ let keyboardType = (value) => {
   console.log('Keyboard Typing: ' + value);
 };
 
-let moveCursor = (x, y) => {
-  mousePos.x += x * -1 * defaultSensitivity
-  mousePos.y += y * -1 * defaultSensitivity
+function moveCursor(x, y) {
+  console.log(x)
+  console.log(y)
+  mousePos.x += x * (defaultSensitivity * 30/2);
+  mousePos.y += y * (defaultSensitivity * 30/2);
 
   robot.moveMouse(mousePos.x, mousePos.y);
 
@@ -53,11 +59,10 @@ server.on('connection', ws => {
     if (obj.leftClickEvent) {
       robot.mouseClick('left');
     }
-    if (obj.startCursorEvent) {
+    if (obj.event == "MouseMotionStart") {
+      console.log('Mouse Motion')
       mousePos = robot.getMousePos();
-    }
-    if (obj.moveCursorEvent) {
-      moveCursor(obj.moveCursorEvent.x, obj.moveCursorEvent.y);
+      moveCursor(obj.axis.x, obj.axis.y);
     }
 
   });

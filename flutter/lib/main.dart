@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:vector_math/vector_math.dart' as math;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 void main() {
@@ -44,7 +45,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class WebSocketPage extends StatefulWidget {
   @override
   _WebSocketPageState createState() => _WebSocketPageState();
@@ -73,6 +73,10 @@ class _WebSocketPageState extends State<WebSocketPage> {
 
   bool isCursorMovingEnabled = false;
 
+  double x = 0.0;
+  double y = 0.0;
+  double z = 0.0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,154 +93,147 @@ class _WebSocketPageState extends State<WebSocketPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Visibility(
-              visible: channel == null,
-              child: TextField(
-                onSubmitted: connectToWS,
-                decoration: const InputDecoration(
-                  labelText:
-                      'Digite o IP do dispositivo (ipconfig getifaddr en0)',
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Text(
+                  'X: ${x.toStringAsFixed(3)} | Y: ${y.toStringAsFixed(3)} | Z: ${z.toStringAsFixed(3)}'),
+              Visibility(
+                visible: channel == null,
+                child: TextField(
+                  onSubmitted: connectToWS,
+                  decoration: const InputDecoration(
+                    labelText:
+                        'Digite o IP do dispositivo (ipconfig getifaddr en0)',
+                  ),
                 ),
               ),
-            ),
 
-            // Widget para exibir mensagens recebidas
-            // StreamBuilder(
-            //   stream: channel?.stream,
-            //   builder: (context, snapshot) {
-            //     return Text(snapshot.hasData
-            //         ? '${snapshot.data}'
-            //         : 'Nenhuma mensagem recebida');
-            //   },
-            // ),
-            TextField(
-              onSubmitted: (text) {
-                // Envia mensagem para o WebSocket quando o usuário submeter
-                final data = {
-                  "keyboardTypeEvent": true,
-                  "message": text,
-                };
-                channel?.sink.add(jsonEncode(data));
-              },
-              decoration: const InputDecoration(labelText: 'Usar teclado'),
-            ),
-            RotatedBox(
-              quarterTurns: -1,
-              child: Slider(
-                label: sensibilidade.toStringAsFixed(2),
-                value: sensibilidade,
-                min: 0.01,
-                max: 1,
-                onChanged: (v) {
-                  setState(() {
-                    sensibilidade = v;
-                  });
-
-                  var data = {"changeSensitivityEvent": v};
+              // Widget para exibir mensagens recebidas
+              // StreamBuilder(
+              //   stream: channel?.stream,
+              //   builder: (context, snapshot) {
+              //     return Text(snapshot.hasData
+              //         ? '${snapshot.data}'
+              //         : 'Nenhuma mensagem recebida');
+              //   },
+              // ),
+              TextField(
+                onSubmitted: (text) {
+                  // Envia mensagem para o WebSocket quando o usuário submeter
+                  final data = {
+                    "keyboardTypeEvent": true,
+                    "message": text,
+                  };
                   channel?.sink.add(jsonEncode(data));
                 },
+                decoration: const InputDecoration(labelText: 'Usar teclado'),
               ),
-            ),
-            SizedBox(
-              height: 80,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      final data = {
-                        "leftClickEvent": true,
-                      };
-                      channel?.sink.add(jsonEncode(data));
-                    },
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          bottomLeft: Radius.circular(10),
-                        ),
-                        color: Colors.red,
-                      ),
-                      width: 150,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      final data = {
-                        "rightClickEvent": true,
-                      };
-                      channel?.sink.add(jsonEncode(data));
-                    },
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
-                        ),
-                        color: Colors.blue,
-                      ),
-                      width: 150,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+              RotatedBox(
+                quarterTurns: -1,
+                child: Slider(
+                  label: sensibilidade.toStringAsFixed(2),
+                  value: sensibilidade,
+                  min: 0.01,
+                  max: 1,
+                  onChanged: (v) {
+                    setState(() {
+                      sensibilidade = v;
+                    });
 
-            SizedBox(
-              height: 24,
-            ),
-            GestureDetector(
-              onTapDown: (_) {
-                setState(() {
-                  isCursorMovingEnabled = true;
-                });
-
-                String direction = "Parado";
-                // Limite de sensibilidade para considerar movimento
-                double threshold = 0.01;
-
-                channel?.sink.add(jsonEncode({"startCursorEvent": true}));
-                acelerometerSubscription = gyroscopeEventStream().listen(
-                  (GyroscopeEvent event) {
-                    if (event.y < threshold) {
-                      direction = "Esquerda (${event.y.toStringAsFixed(3)})";
-                    } else if (event.y > -threshold) {
-                      direction = "Direita (${event.y.toStringAsFixed(3)})";
-                    } else {
-                      direction = "Parado (${event.y.toStringAsFixed(3)})";
-                    }
-
-                    print(direction);
-                    // Fazer um sistema de calibragem??
-
-                    // sendMouseMovement(event.x, event.y);
+                    var data = {"changeSensitivityEvent": v};
+                    channel?.sink.add(jsonEncode(data));
                   },
-                  onError: (error) {
+                ),
+              ),
+              SizedBox(
+                height: 80,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        final data = {
+                          "leftClickEvent": true,
+                        };
+                        channel?.sink.add(jsonEncode(data));
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            bottomLeft: Radius.circular(10),
+                          ),
+                          color: Colors.red,
+                        ),
+                        width: 150,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        final data = {
+                          "rightClickEvent": true,
+                        };
+                        channel?.sink.add(jsonEncode(data));
+                      },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(10),
+                            bottomRight: Radius.circular(10),
+                          ),
+                          color: Colors.blue,
+                        ),
+                        width: 150,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(
+                height: 24,
+              ),
+              GestureDetector(
+                onTap: () {
+                  if (!isCursorMovingEnabled) {
+                    setState(() {
+                      isCursorMovingEnabled = true;
+                    });
+
+                    acelerometerSubscription =
+                        gyroscopeEventStream().listen((GyroscopeEvent event) {
+                      setState(() {
+                        x = event.x;
+                        y = event.y;
+                        z = event.z;
+                      });
+
+                      sendMouseMovement(event.z * -1, event.x * -1);
+                    });
+                  } else {
                     setState(() {
                       isCursorMovingEnabled = false;
                     });
-                  },
-                  cancelOnError: true,
-                );
-              },
-              onTapUp: (_) {
-                setState(() {
-                  isCursorMovingEnabled = false;
-                });
-                acelerometerSubscription?.cancel();
-              },
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(300),
-                  color: isCursorMovingEnabled ? Colors.green : Colors.grey,
+                    acelerometerSubscription?.cancel();
+                    acelerometerSubscription = null;
+
+                    channel?.sink.add(jsonEncode({
+                      "event": "MouseMotionStop",
+                    }));
+                  }
+                },
+                child: Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(300),
+                    color: isCursorMovingEnabled ? Colors.green : Colors.grey,
+                  ),
                 ),
-              ),
-            )
-          ],
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -245,10 +242,25 @@ class _WebSocketPageState extends State<WebSocketPage> {
   StreamSubscription? acelerometerSubscription;
 
   sendMouseMovement(double x, double y) {
+    // X é Z e pra direita é negativo
+    // X é Y e pra cima é positivo
+
+    final double threshholdX = 0.4;
+    final double threshholdY = 0.2;
+
+    if(x.abs() <= threshholdX){
+      x = 0;
+    }
+    
+    if(y.abs() <= threshholdY){
+      y = 0;
+    }
+
     final data = {
-      "moveCursorEvent": {
+      "event": "MouseMotionStart",
+      "axis": {
         "x": x,
-        "y": y,
+        "y": y * 1.65,
       }
     };
     if (isCursorMovingEnabled) {
