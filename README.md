@@ -45,7 +45,7 @@ npm install
 ### 3. Inicie o Servidor WebSocket
 
 ```bash
-node server.js
+node index.js
 ```
 
 ### 4. Configuração do Aplicativo Flutter
@@ -88,6 +88,9 @@ O aplicativo coleta os dados de movimento através dos sensores (acelerômetro/g
 ### Movimento do Mouse
 
 - Movimentos suaves no eixo **X** ou **Y** do giroscópio podem ser usados para mover o cursor do mouse.
+
+## Capturas de tela
+![Exemplo de uso](/screenshots/output.gif)
 
 ## Tecnologias Utilizadas
 
