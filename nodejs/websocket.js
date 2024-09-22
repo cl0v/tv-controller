@@ -22,27 +22,19 @@ let keyboardType = (value) => {
   robot.typeString(value);
   console.log('Keyboard Typing: ' + value);
 };
-let posx = 0
-let posy = 0
 
 function moveCursor(x, y) {
   console.log(x)
   console.log(y)
-  posx +=  (screenSize.width / 40) * x
-  posy +=  (screenSize.height / 30) * y
+  mousePos.x += x * (defaultSensitivity * 30/2);
+  mousePos.y += y * (defaultSensitivity * 30/2);
 
-  robot.moveMouse(posx, posy);
+  robot.moveMouse(mousePos.x, mousePos.y);
 
   console.log('Cursor moved to: ' + mousePos.x + ', ' + mousePos.y);
 };
 
 server.on('connection', ws => {
-
-  // server.send(JSON.stringify({
-  //   width: screenSize.width,
-  //   height: screenSize.height
-  // }))
-
   console.log('Novo cliente conectado');
 
   ws.on('message', message => {
@@ -68,12 +60,7 @@ server.on('connection', ws => {
       robot.mouseClick('left');
     }
     if (obj.event == "MouseMotionStart") {
-      posx = screenSize.width / 2
-      posy = screenSize.height / 2
-    }
-    if (obj.event == "MouseMotionMove") {
       console.log('Mouse Motion')
-      console.log(obj)
       mousePos = robot.getMousePos();
       moveCursor(obj.axis.x, obj.axis.y);
     }
@@ -86,4 +73,5 @@ server.on('connection', ws => {
 });
 
 console.log('Servidor WebSocket rodando na porta 8080');
+
 

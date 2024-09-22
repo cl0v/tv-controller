@@ -39,6 +39,7 @@ dependencies:
   flutter_blue_plus: ^1.32.12
   web_socket_channel: ^3.0.1
   vector_math: ^2.1.4
+  udp: ^5.0.3
 
 dev_dependencies:
   flutter_test:
