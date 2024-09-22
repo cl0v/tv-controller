@@ -28,8 +28,8 @@ let posy = 0
 function moveCursor(x, y) {
   console.log(x)
   console.log(y)
-  posx +=  (screenSize.width / 40) * x
-  posy +=  (screenSize.height / 30) * y
+  posx +=  (screenSize.width / 32) * x
+  posy +=  (screenSize.height / 18) * y
 
   robot.moveMouse(posx, posy);
 

@@ -36,10 +36,6 @@ class _WebSocketPageState extends State<WebSocketPage> {
 
   bool isCursorMovingEnabled = false;
 
-  double x = 0.0;
-  double y = 0.0;
-  double z = 0.0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,9 +55,7 @@ class _WebSocketPageState extends State<WebSocketPage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Text(
-                  'X: ${x.toStringAsFixed(3)} | Y: ${y.toStringAsFixed(3)} | Z: ${z.toStringAsFixed(3)}'),
-              Visibility(
+             Visibility(
                 visible: channel == null,
                 child: TextField(
                   onSubmitted: connectToWS,
@@ -125,14 +119,7 @@ class _WebSocketPageState extends State<WebSocketPage> {
                     }));
 
                     acelerometerSubscription =
-                        gyroscopeEventStream().listen((GyroscopeEvent event) {
-                      setState(() {
-                        x = event.x;
-                        y = event.y;
-                        z = event.z;
-                      });
-
-                      // sendMouseMovement(event.x, event.y);
+                        gyroscopeEventStream(samplingPeriod: SensorInterval.gameInterval).listen((GyroscopeEvent event) {
                       sendMouseMovement(event.z * -1, event.x * -1, event.timestamp);
                     });
                   } else {
@@ -225,8 +212,8 @@ class _WebSocketPageState extends State<WebSocketPage> {
     y = (math.degrees(y * seconds));
 
 
-    final double threshholdX = 0.35;
-    final double threshholdY = 0.35;
+    final double threshholdX = 0.1;
+    final double threshholdY = 0.1;
 
     if(x.abs() <= threshholdX){
       x = 0;
