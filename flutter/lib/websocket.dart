@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:vector_math/vector_math.dart' as math;
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -14,7 +13,7 @@ class WebSocketPage extends StatefulWidget {
 }
 
 class _WebSocketPageState extends State<WebSocketPage> {
-  final macIP = "192.168.52.103";
+  final macIP = "192.168.52.109";
   WebSocketChannel? channel;
   // Substitua pelo IP do seu servidor WebSocket
 
@@ -145,7 +144,7 @@ class _WebSocketPageState extends State<WebSocketPage> {
               ),
               SizedBox(height: 24,),
               SizedBox(
-                height: 80,
+                height: 120,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -165,6 +164,7 @@ class _WebSocketPageState extends State<WebSocketPage> {
                           color: Colors.red,
                         ),
                         width: 150,
+                        height: 210,
                       ),
                     ),
                     GestureDetector(
@@ -183,6 +183,7 @@ class _WebSocketPageState extends State<WebSocketPage> {
                           color: Colors.blue,
                         ),
                         width: 150,
+                        height: 210,
                       ),
                     ),
                   ],

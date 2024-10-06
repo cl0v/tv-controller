@@ -1,6 +1,8 @@
 const WebSocket = require('ws');
 const robot = require('robotjs');
 
+// ipconfig getifaddr en0
+
 const server = new WebSocket.Server({ port: 8080 });
 
 let screenSize = robot.getScreenSize();
