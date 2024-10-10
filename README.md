@@ -29,8 +29,8 @@ Este projeto permite controlar um **Slideshow** (ou qualquer outro software) à 
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seuusuario/controle-slideshow.git
-cd controle-slideshow
+git clone [https://github.com/seuusuario/controle-slideshow.git](https://github.com/cl0v/tv-controller)
+cd tv-controller
 ```
 
 ### 2. Configuração do Servidor NodeJS
