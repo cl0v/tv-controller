@@ -24,12 +24,15 @@ function getAbi (target, runtime) {
   }
 
   var abi
+  var lastTarget
 
   for (var i = 0; i < allTargets.length; i++) {
     var t = allTargets[i]
     if (t.runtime !== runtime) continue
-    if (semver.lte(t.target, target)) abi = t.abi
-    else break
+    if (semver.lte(t.target, target) && (!lastTarget || semver.gte(t.target, lastTarget))) {
+      abi = t.abi
+      lastTarget = t.target
+    }
   }
 
   if (abi && semver.lt(target, getNextTarget(runtime))) return abi
