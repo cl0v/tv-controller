@@ -29,7 +29,7 @@ Este projeto permite controlar um **Slideshow** (ou qualquer outro software) à 
 ### 1. Clone o repositório
 
 ```bash
-git clone [https://github.com/seuusuario/controle-slideshow.git](https://github.com/cl0v/tv-controller)
+git clone https://github.com/cl0v/tv-controller
 cd tv-controller
 ```
 
