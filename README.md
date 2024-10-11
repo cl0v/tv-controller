@@ -108,6 +108,14 @@ O aplicativo coleta os dados de movimento através dos sensores (acelerômetro/g
 4. Faça um push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
 
+## Buy me a Coffee
+
+Give a ⭐️ if this project helped you!
+
+<a href="https://www.patreon.com/cl0v">
+  <img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
+</a>
+
 ## Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
