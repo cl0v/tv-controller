@@ -122,7 +122,7 @@ Este projeto está licenciado sob a [MIT License](LICENSE).
 
 ## Contato
 
-Caso tenha dúvidas ou sugestões, sinta-se à vontade para abrir uma **issue** ou entrar em contato pelo e-mail: [marcelofv12@hotmail.com](mailto:marcelofv12@hotmail.com).
+Caso tenha dúvidas ou sugestões, sinta-se à vontade para abrir uma **issue** ou entrar em contato pelo [LinkedIn](https://www.linkedin.com/in/marcelo-fernandes-viana-a49311329/).
 
 ### Estrutura do Projeto:
 
