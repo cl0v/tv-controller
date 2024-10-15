@@ -118,7 +118,7 @@ Give a ⭐️ if this project helped you!
 
 ## Licença
 
-Este projeto está licenciado sob a [MIT License](LICENSE).
+Este projeto está licenciado sob a [Licença Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Contato
 
