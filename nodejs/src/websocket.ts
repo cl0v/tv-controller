@@ -1,5 +1,5 @@
 import { changeSensitivity, keyboardType, moveCursor, centerCursor, rightClick, leftClick } from './robot';
-import {WebSocket, WebSocketServer} from 'ws';
+import { WebSocketServer } from 'ws';
 // const WebSocket = require('ws');
 
 
