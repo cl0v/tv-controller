@@ -38,14 +38,14 @@ cd tv-controller
 Instale as dependências do NodeJS:
 
 ```bash
-cd server
+cd nodejs
 npm install
 ```
 
 ### 3. Inicie o Servidor WebSocket
 
 ```bash
-node index.js
+node main.js
 ```
 
 ### 4. Configuração do Aplicativo Flutter
@@ -53,7 +53,7 @@ node index.js
 Certifique-se de que o Flutter está instalado e as dependências estão configuradas:
 
 ```bash
-cd app
+cd flutter
 flutter pub get
 ```
 
