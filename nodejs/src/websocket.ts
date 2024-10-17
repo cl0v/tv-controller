@@ -9,51 +9,103 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { changeSensitivity, keyboardType, moveCursor, centerCursor, rightClick, leftClick } from './robot';
-import { WebSocketServer } from 'ws';
 
-export const connectServer = function () {
+import { WebSocketServer, WebSocket } from 'ws';
+import { changeSensitivity, keyboardType, moveCursor, centerCursor, rightClick, leftClick, performShortcut, initRobot } from './robot';
+import { Config } from './config';
+import { createLogger } from './logger';
 
-    // const socket = new WebSocketServer({ port: 8080 });
-    const server = new WebSocketServer({ port: 8080 });
+const logger = createLogger('websocket');
 
-    console.log('Servidor WebSocket rodando na porta 8080');
+interface Client {
+    id: string;
+    ws: WebSocket
+    room: string;
+}
 
+const clients: Client[] = [];
 
-    server.on('connection', ws => {
-        console.log('Novo cliente conectado');
+export function connectServer(config: Config) {
+    const server = new WebSocketServer({ port: config.port });
+    logger.info(`WebSocket server running on port ${config.port}`);
 
-        ws.on('message', message => {
+    initRobot(config);
 
-            let obj = JSON.parse(message.toString());
+    server.on('connection', (ws) => {
+        const client: Client = {
+            id: generateClientId(),
+            ws,
+            room: 'default',
+        };
+        clients.push(client);
+        logger.info(`New client connected: ${client.id}`);
 
-            if (obj.changeSensitivityEvent) {
-                changeSensitivity(obj.changeSensitivityEvent);
-            }
-
-            if (obj.keyboardTypeEvent) {
-                keyboardType(obj.message);
-            }
-
-            if (obj.rightClickEvent) {
-                rightClick();
-            }
-            if (obj.leftClickEvent) {
-                leftClick();
-            }
-            if (obj.event == "MouseMotionStart") {
-                centerCursor()
-            }
-            if (obj.event == "MouseMotionMove") {
-                moveCursor(obj.axis.x, obj.axis.y);
-            }
-
-        });
+        ws.on('message', (message) => handleMessage(client, message));
 
         ws.on('close', () => {
-            console.log('Cliente desconectado');
+            const index = clients.findIndex((c) => c.id === client.id);
+            if (index !== -1) {
+                clients.splice(index, 1);
+            }
+            logger.info(`Client disconnected: ${client.id}`);
         });
     });
+}
 
+function handleMessage(client: Client, message: any) {
+    try {
+        const obj = JSON.parse(message.toString());
+        logger.debug(`Received message from ${client.id}:`, obj);
 
+        if (obj.changeSensitivityEvent) {
+            changeSensitivity(obj.changeSensitivityEvent);
+        }
+        if (obj.keyboardTypeEvent) {
+            keyboardType(obj.message);
+        }
+        if (obj.rightClickEvent) {
+            rightClick();
+        }
+        if (obj.leftClickEvent) {
+            leftClick();
+        }
+        if (obj.event === "MouseMotionStart") {
+            centerCursor();
+        }
+        if (obj.event === "MouseMotionMove") {
+            moveCursor(obj.axis.x, obj.axis.y);
+        }
+        if (obj.shortcut) {
+            performShortcut(obj.shortcut);
+        }
+        if (obj.joinRoom) {
+            joinRoom(client, obj.joinRoom);
+        }
+        if (obj.laserPointer) {
+            broadcastToRoom(client.room, {
+                type: 'laserPointer',
+                position: obj.laserPointer,
+                clientId: client.id,
+            });
+        }
+    } catch (error) {
+        logger.error('Error handling message:', error);
+    }
+}
+
+function generateClientId(): string {
+    return Math.random().toString(36).substr(2, 9);
+}
+
+function joinRoom(client: Client, room: string) {
+    client.room = room;
+    logger.info(`Client ${client.id} joined room: ${room}`);
+}
+
+function broadcastToRoom(room: string, message: any) {
+    clients.forEach((client) => {
+        if (client.room === room && client.ws.readyState === WebSocket.OPEN) {
+            client.ws.send(JSON.stringify(message));
+        }
+    });
 }
