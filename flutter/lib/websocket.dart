@@ -1,14 +1,5 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// ignore_for_file: library_private_types_in_public_api
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -19,44 +10,109 @@ import 'package:vector_math/vector_math.dart' as math;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketPage extends StatefulWidget {
+  const WebSocketPage({super.key});
+
   @override
   _WebSocketPageState createState() => _WebSocketPageState();
 }
 
 class _WebSocketPageState extends State<WebSocketPage> {
-  final macIP = "192.168.52.109";
+  final TextEditingController _ipController = TextEditingController();
   WebSocketChannel? channel;
-  // Substitua pelo IP do seu servidor WebSocket
+  bool isCursorMovingEnabled = false;
+  double sensitivity = 0.5;
+  String? connectionStatus;
+  StreamSubscription? gyroscopeSubscription;
+  DateTime lastMouseMovement = DateTime.now();
 
   @override
   void initState() {
     super.initState();
+    _ipController.text = "192.168.52.109"; // Default IP
   }
 
-  connectToWS([String? ipAdd]) {
-    ipAdd ??= macIP;
+  void connectToWS() {
     setState(() {
+      connectionStatus = "Connecting...";
+    });
+    try {
       channel = WebSocketChannel.connect(
-        Uri.parse('ws://$macIP:8080'),
+        Uri.parse('ws://${_ipController.text}:8080'),
       );
+      channel!.stream.listen(
+        (message) {
+          // Handle incoming messages if needed
+        },
+        onDone: () {
+          setState(() {
+            connectionStatus = "Disconnected";
+            channel = null;
+          });
+        },
+        onError: (error) {
+          setState(() {
+            connectionStatus = "Connection failed";
+            channel = null;
+          });
+        },
+      );
+      setState(() {
+        connectionStatus = "Connected";
+      });
+    } catch (e) {
+      setState(() {
+        connectionStatus = "Connection failed";
+      });
+    }
+  }
+
+  void sendMessage(Map<String, dynamic> data) {
+    channel?.sink.add(jsonEncode(data));
+  }
+
+  void sendMouseMovement(double x, double y, DateTime timestamp) {
+    var seconds = timestamp.difference(lastMouseMovement).inMicroseconds / (pow(10, 6));
+    lastMouseMovement = timestamp;
+
+    x = (math.degrees(x * seconds));
+    y = (math.degrees(y * seconds));
+
+    const double thresholdX = 0.1;
+    const double thresholdY = 0.1;
+
+    if (x.abs() <= thresholdX) x = 0;
+    if (y.abs() <= thresholdY) y = 0;
+
+    final data = {
+      "event": "MouseMotionMove",
+      "axis": {"x": x, "y": y}
+    };
+
+    if (isCursorMovingEnabled) {
+      sendMessage(data);
+    }
+  }
+
+  void startGyroscopeListening() {
+    gyroscopeSubscription = gyroscopeEventStream(samplingPeriod: SensorInterval.gameInterval).listen((GyroscopeEvent event) {
+      sendMouseMovement(event.z * -1, event.x * -1, event.timestamp);
     });
   }
 
-  double sensibilidade = 0.5;
-
-  bool isCursorMovingEnabled = false;
+  void stopGyroscopeListening() {
+    gyroscopeSubscription?.cancel();
+    gyroscopeSubscription = null;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WebSocket Flutter'),
+        title: const Text('Presentation Remote'),
         actions: [
           IconButton(
-            onPressed: () {
-              connectToWS();
-            },
-            icon: Icon(Icons.refresh),
+            onPressed: connectToWS,
+            icon: const Icon(Icons.refresh),
           )
         ],
       ),
@@ -64,196 +120,128 @@ class _WebSocketPageState extends State<WebSocketPage> {
         padding: const EdgeInsets.all(20.0),
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-             Visibility(
-                visible: channel == null,
-                child: TextField(
-                  onSubmitted: connectToWS,
-                  decoration: const InputDecoration(
-                    labelText:
-                        'Digite o IP do dispositivo (ipconfig getifaddr en0)',
+              TextField(
+                controller: _ipController,
+                decoration: InputDecoration(
+                  labelText: 'Server IP Address',
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.connect_without_contact),
+                    onPressed: connectToWS,
                   ),
                 ),
               ),
-
-              // Widget para exibir mensagens recebidas
-              // StreamBuilder(
-              //   stream: channel?.stream,
-              //   builder: (context, snapshot) {
-              //     return Text(snapshot.hasData
-              //         ? '${snapshot.data}'
-              //         : 'Nenhuma mensagem recebida');
-              //   },
-              // ),
+              const SizedBox(height: 10),
+              Text(
+                'Status: ${connectionStatus ?? "Not connected"}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
               TextField(
                 onSubmitted: (text) {
-                  // Envia mensagem para o WebSocket quando o usuário submeter
-                  final data = {
-                    "keyboardTypeEvent": true,
-                    "message": text,
-                  };
-                  channel?.sink.add(jsonEncode(data));
+                  sendMessage({"keyboardTypeEvent": true, "message": text});
                 },
-                decoration: const InputDecoration(labelText: 'Usar teclado'),
+                decoration: const InputDecoration(labelText: 'Type text'),
               ),
-              RotatedBox(
-                quarterTurns: -1,
-                child: Slider(
-                  label: sensibilidade.toStringAsFixed(2),
-                  value: sensibilidade,
-                  min: 0.01,
-                  max: 1,
-                  onChanged: (v) {
+              const SizedBox(height: 20),
+              Text('Sensitivity: ${sensitivity.toStringAsFixed(2)}'),
+              Slider(
+                value: sensitivity,
+                min: 0.01,
+                max: 1,
+                onChanged: (v) {
+                  setState(() {
+                    sensitivity = v;
+                  });
+                  sendMessage({"changeSensitivityEvent": v});
+                },
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: GestureDetector(
+                  onTap: () {
                     setState(() {
-                      sensibilidade = v;
+                      isCursorMovingEnabled = !isCursorMovingEnabled;
                     });
-
-                    var data = {"changeSensitivityEvent": v};
-                    channel?.sink.add(jsonEncode(data));
+                    if (isCursorMovingEnabled) {
+                      sendMessage({"event": "MouseMotionStart"});
+                      startGyroscopeListening();
+                    } else {
+                      sendMessage({"event": "MouseMotionStop"});
+                      stopGyroscopeListening();
+                    }
                   },
-                ),
-              ),
-              
-              SizedBox(
-                height: 24,
-              ),
-              GestureDetector(
-                onTap: () {
-                  if (!isCursorMovingEnabled) {
-                    setState(() {
-                      isCursorMovingEnabled = true;
-                    });
-
-                    channel?.sink.add(jsonEncode({
-                      "event": "MouseMotionStart",
-                    }));
-
-                    acelerometerSubscription =
-                        gyroscopeEventStream(samplingPeriod: SensorInterval.gameInterval).listen((GyroscopeEvent event) {
-                      sendMouseMovement(event.z * -1, event.x * -1, event.timestamp);
-                    });
-                  } else {
-                    setState(() {
-                      isCursorMovingEnabled = false;
-                    });
-                    acelerometerSubscription?.cancel();
-                    acelerometerSubscription = null;
-
-                    channel?.sink.add(jsonEncode({
-                      "event": "MouseMotionStop",
-                    }));
-                  }
-                },
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(300),
-                    color: isCursorMovingEnabled ? Colors.green : Colors.grey,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isCursorMovingEnabled ? Colors.green : Colors.grey,
+                    ),
+                    child: Center(
+                      child: Text(
+                        isCursorMovingEnabled ? 'Stop Cursor' : 'Start Cursor',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ),
               ),
-              SizedBox(height: 24,),
-              SizedBox(
-                height: 120,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        final data = {
-                          "leftClickEvent": true,
-                        };
-                        channel?.sink.add(jsonEncode(data));
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                          ),
-                          color: Colors.red,
-                        ),
-                        width: 150,
-                        height: 210,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        final data = {
-                          "rightClickEvent": true,
-                        };
-                        channel?.sink.add(jsonEncode(data));
-                      },
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
-                          ),
-                          color: Colors.blue,
-                        ),
-                        width: 150,
-                        height: 210,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => sendMessage({"leftClickEvent": true}),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+                    child: const Text('Left Click'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => sendMessage({"rightClickEvent": true}),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                    child: const Text('Right Click'),
+                  ),
+                ],
               ),
-
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => sendMessage({"shortcut": "previous_slide"}),
+                    child: const Icon(Icons.arrow_back),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => sendMessage({"shortcut": "next_slide"}),
+                    child: const Icon(Icons.arrow_forward),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => sendMessage({"shortcut": "start_presentation"}),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                child: const Text('Start Presentation'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () => sendMessage({"shortcut": "end_presentation"}),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('End Presentation'),
+              ),
             ],
-
           ),
         ),
       ),
     );
-  }
-
-  StreamSubscription? acelerometerSubscription;
-
-  DateTime lastMouseMovement = DateTime.now();
-
-  sendMouseMovement(double x, double y, DateTime timestamp) {
-    // X é Z e pra direita é negativo
-    // X é Y e pra cima é positivo
-
-    var seconds = timestamp.difference(lastMouseMovement).inMicroseconds / (pow(10, 6));
-    lastMouseMovement = timestamp;
-
-    x = (math.degrees(x * seconds));
-    y = (math.degrees(y * seconds));
-
-
-    final double threshholdX = 0.1;
-    final double threshholdY = 0.1;
-
-    if(x.abs() <= threshholdX){
-      x = 0;
-    }
-    
-    if(y.abs() <= threshholdY){
-      y = 0;
-    }
-
-
-    final data = {
-      "event": "MouseMotionMove",
-      "axis": {
-        "x": x,
-        "y": y,
-      }
-    };
-    print(data);
-
-    if (isCursorMovingEnabled) {
-      channel?.sink.add(jsonEncode(data));
-    }
-  }
+  }  
 
   @override
   void dispose() {
-    // Fechar o canal ao sair
     channel?.sink.close();
+    gyroscopeSubscription?.cancel();
+    _ipController.dispose();
     super.dispose();
   }
 }

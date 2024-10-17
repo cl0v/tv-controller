@@ -36,21 +36,29 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var websocket_1 = require("./src/websocket");
-var config_1 = require("./src/config");
-function main() {
+exports.loadConfig = loadConfig;
+var promises_1 = require("fs/promises");
+function loadConfig() {
     return __awaiter(this, void 0, void 0, function () {
-        var config;
+        var configFile, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4, (0, config_1.loadConfig)()];
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4, (0, promises_1.readFile)('config.json', { encoding: 'utf-8' })];
                 case 1:
-                    config = _a.sent();
-                    (0, websocket_1.connectServer)(config);
-                    return [2];
+                    configFile = _a.sent();
+                    return [2, JSON.parse(configFile)];
+                case 2:
+                    error_1 = _a.sent();
+                    console.warn('Failed to load config file, using defaults:', error_1);
+                    return [2, {
+                            port: 8080,
+                            defaultSensitivity: 10,
+                        }];
+                case 3: return [2];
             }
         });
     });
 }
-main().catch(console.error);
-//# sourceMappingURL=main.js.map
+//# sourceMappingURL=config.js.map

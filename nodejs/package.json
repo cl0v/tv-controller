@@ -8,14 +8,19 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "tsc -w -p . ",
-    "start": "node main.js"
+    "start": "node main.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@jitsi/robotjs": "^0.6.13",
+    "winston": "^3.3.3",
     "ws": "^8.18.0"
   },
   "devDependencies": {
+    "@types/node": "^22.7.5",
     "@types/ws": "^8.5.12",
+    "ts-node-dev": "^1.1.8",
     "typescript": "^5.6.3"
   }
 }
