@@ -79,9 +79,9 @@ export function performShortcut(shortcut: string) {
 
 function checkScreenBoundaries(x: number, y: number): { x: number; y: number } {
     const currentPos = getMousePos();
-    
-    let newX = Math.max(0, Math.min(screenSize.width, currentPos.x + x));
-    let newY = Math.max(0, Math.min(screenSize.height, currentPos.y + y));
-    
+
+    let newX = Math.max(0, Math.min(screenSize.width, currentPos.x + x * 32));
+    let newY = Math.max(0, Math.min(screenSize.height, currentPos.y + y * 18));
+
     return { x: newX - currentPos.x, y: newY - currentPos.y };
 }
