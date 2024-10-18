@@ -45,7 +45,7 @@ npm install
 ### 3. Inicie o Servidor WebSocket
 
 ```bash
-node main.js
+npm run start
 ```
 
 ### 4. Configuração do Aplicativo Flutter
